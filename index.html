@@ -3,19 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>楽園</title>
+    <title></title>
     <style>
-        /* 基本的なスタイルリセットとページ全体のデザイン */
+        /* Google FontsからRoboto Monoをインポート */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
+
+        /* 基本的なスタイルリセットとページ全体のデザイン (ファイル1より) */
         body, html {
             margin: 0;
             padding: 0;
             height: 100%;
             font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', Meiryo, メイリオ, Osaka, 'MS PGothic', arial, helvetica, sans-serif;
-            color: #fff; /* テキストの色を白に */
+            color: #fff; /* テキストの基本色を白に */
             overflow: hidden; /* スクロールバーを非表示に */
         }
 
-        /* パーティクルを描画する背景のスタイル */
+        /* パーティクルを描画する背景のスタイル (ファイル1より) */
         #particles-js {
             position: absolute;
             width: 100%;
@@ -24,16 +27,18 @@
             z-index: -1; /* コンテンツの背面に配置 */
         }
 
-        /* コンテンツを画面中央に配置するためのコンテナ */
+        /* コンテンツを画面中央に配置するためのコンテナ (ファイル1より) */
         .content-wrapper {
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100%;
             text-align: center;
+            padding: 1em;
+            box-sizing: border-box;
         }
         
-        /* コンテンツ本体のスタイル */
+        /* コンテンツ本体のスタイル (ファイル1より) */
         .content {
             padding: 30px 40px;
             background-color: rgba(0, 0, 0, 0.6); /* 半透明の黒い背景 */
@@ -41,36 +46,55 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(5px); /* ガラスのようなすりガラス効果 */
             z-index: 1;
+            max-width: 650px; /* ターミナルの最大幅と合わせる */
+            width: 100%;
         }
 
-        /* タイトルのスタイル */
-        .content h1 {
-            margin-top: 0;
-            font-size: 3em;
-            letter-spacing: 3px;
-            text-shadow: 0 0 10px rgba(77, 166, 255, 0.7);
-        }
-
-        /* リンクのスタイル */
-        .content a {
-            display: block; /* リンクをブロック要素にして改行 */
-            margin-bottom: 15px; /* 各リンクの間隔 */
-            color: #4da6ff; /* リンクの色を明るい青に */
-            text-decoration: none;
-            font-size: 1.2em;
-            transition: all 0.3s ease;
-        }
-
-        .content a:hover {
-            color: #ffffff; /* ホバー時に白く */
-            transform: scale(1.05); /* 少しだけ拡大 */
-        }
-
-        /* 説明文のスタイル */
-        .content p {
-            line-height: 1.8;
+        /* --- ここからファイル2のスタイル --- */
+        #terminal {
+            width: 100%;
             font-size: 1.1em;
-            margin-bottom: 20px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+            text-align: left; /* ターミナル内は左揃えに */
+            font-family: 'Roboto Mono', monospace; /* ターミナル専用フォント */
+        }
+
+        .prompt {
+            color: #8b949e;
+        }
+
+        .command {
+            color: #c9d1d9;
+        }
+
+        .output {
+            color: #7ee787; /* 成功メッセージの色 */
+        }
+
+        .cursor {
+            display: inline-block;
+            background-color: #c9d1d9;
+            width: 0.6em;
+            height: 1.2em;
+            animation: blink 1s step-end infinite;
+            vertical-align: bottom;
+            margin-left: 0.2em;
+        }
+
+        @keyframes blink {
+            from, to { background-color: transparent; }
+            50% { background-color: #c9d1d9; }
+        }
+
+        @media (max-width: 600px) {
+            .content {
+                padding: 20px;
+            }
+            #terminal {
+                font-size: 0.9em;
+            }
         }
     </style>
 </head>
@@ -79,11 +103,10 @@
 
     <div class="content-wrapper">
         <div class="content">
-            <h1>楽園</h1>
-            <p>運営中のサイト</p>
-            <a href="https://omk.taki-hjac.jp/" target="_blank" rel="noopener noreferrer">Misskey</a>
-            <a href="https://flask-bbs-private.onrender.com/" target="_blank" rel="noopener noreferrer">Anonote</a>
-            <a href="https://anosgame.onrender.com/" target="_blank" rel="noopener noreferrer">AnOS</a>
+            <div id="terminal">
+                <div id="output"></div>
+                <span class="cursor"></span>
+            </div>
         </div>
     </div>
 
@@ -92,40 +115,86 @@
     <script>
         particlesJS('particles-js', {
             "particles": {
-                "number": {
-                    "value": 100, // パーティクルの数
-                    "density": { "enable": true, "value_area": 800 }
-                },
-                "color": { "value": "#ffffff" }, // パーティクルの色
+                "number": { "value": 100, "density": { "enable": true, "value_area": 800 } },
+                "color": { "value": "#ffffff" },
                 "shape": { "type": "circle" },
-                "opacity": {
-                    "value": 0.5, "random": true,
-                    "anim": { "enable": true, "speed": 1, "opacity_min": 0.1, "sync": false }
-                },
-                "size": {
-                    "value": 3, "random": true,
-                    "anim": { "enable": false }
-                },
-                "line_linked": {
-                    "enable": true, "distance": 150, "color": "#ffffff", "opacity": 0.4, "width": 1
-                },
-                "move": {
-                    "enable": true, "speed": 2, // 動く速さ
-                    "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false
-                }
+                "opacity": { "value": 0.5, "random": true, "anim": { "enable": true, "speed": 1, "opacity_min": 0.1, "sync": false } },
+                "size": { "value": 3, "random": true, "anim": { "enable": false } },
+                "line_linked": { "enable": true, "distance": 150, "color": "#ffffff", "opacity": 0.4, "width": 1 },
+                "move": { "enable": true, "speed": 2, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
             },
             "interactivity": {
                 "detect_on": "canvas",
-                "events": {
-                    "onhover": { "enable": true, "mode": "repulse" }, // マウスホバーで粒子が逃げる
-                    "resize": true
-                },
-                "modes": {
-                    "repulse": { "distance": 100, "duration": 0.4 }
-                }
+                "events": { "onhover": { "enable": true, "mode": "repulse" }, "resize": true },
+                "modes": { "repulse": { "distance": 100, "duration": 0.4 } }
             },
             "retina_detect": true
         });
+    </script>
+
+    <script>
+        // --- 設定項目 ---
+        // Blueskyでのあなたのハンドル名（例: @example.bsky.social）をここに入力してください。
+        const yourHandle = "@example.bsky.social";
+        // ----------------
+
+        const outputElement = document.getElementById('output');
+        const cursorElement = document.querySelector('.cursor');
+
+        const lines = [
+            { text: 'verify --domain ' + window.location.hostname, type: 'command', delay: 1500 },
+            { text: '...', type: 'text', delay: 1000 },
+            { text: 'Connecting to atproto network...', type: 'text', delay: 1200 },
+            { text: 'Domain ownership confirmed.', type: 'output', delay: 800 },
+            { text: `Handle successfully resolved to ${yourHandle}`, type: 'output', delay: 500 },
+            { text: '', type: 'text', delay: 1000 },
+            { text: 'このドメインは Bluesky のカスタムハンドル用に設定されています。', type: 'text', delay: 200 },
+            { text: 'さあ、青い空へ飛び立とう。', type: 'text', delay: 200 }
+        ];
+
+        let lineIndex = 0;
+
+        function typeLine() {
+            if (lineIndex >= lines.length) {
+                cursorElement.style.display = 'inline-block'; // 最後にカーソルを再表示
+                return;
+            }
+
+            const line = lines[lineIndex];
+            const div = document.createElement('div');
+            
+            if (line.type === 'command') {
+                div.innerHTML = `<span class="prompt">$ </span><span class="command">${line.text}</span>`;
+            } else if (line.type === 'output') {
+                div.innerHTML = `<span class="output">✔ ${line.text}</span>`;
+            } else {
+                div.innerHTML = line.text;
+            }
+            
+            outputElement.appendChild(div);
+            window.scrollTo(0, document.body.scrollHeight);
+            
+            lineIndex++;
+            setTimeout(typeLine, line.delay);
+        }
+
+        // ターミナル風アニメーションを開始
+        setTimeout(typeLine, 1000);
+
+        // コンソールに表示するアスキーアートとメッセージ
+        const butterfly = `
+              ,d88b.d88b,
+              88888888888
+              \`Y8888888Y'
+               \`Y888Y'
+                 \`Y'
+        `;
+        const consoleMessage = `Hello, curious dev! 👋
+このページはBlueskyのハンドル認証用です。
+See you in the sky! - ${yourHandle}`;
+
+        console.log(`%c${butterfly}`, 'color: #58a6ff; font-weight: bold;');
+        console.log(`%c${consoleMessage}`, 'color: #c9d1d9; font-size: 1.1em;');
     </script>
 </body>
 </html>
